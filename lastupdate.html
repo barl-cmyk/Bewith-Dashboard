@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bewith — Fin AI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#e91e8c;--pink-mid:#f05aa8;--pink-light:#ff9dd4;--pink-pale:#fde8f4;--pink-bg:#fff5fb;
+  --bg:#f4f6f9;--card:#fff;--border:#e8e8f0;--text:#1a1a2e;--sub:#6b6b80;--muted:#9999aa;
+  --green:#10b981;--green-bg:#ecfdf5;--amber:#f59e0b;--amber-bg:#fffbeb;
+  --red:#ef4444;--red-bg:#fef2f2;--blue:#3b82f6;--blue-bg:#eff6ff;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#e91e8c 0%,#f05aa8 50%,#ff9dd4 100%);position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(233,30,140,.25)}
+.hdr-inner{max-width:1280px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-ico{width:36px;height:36px;background:rgba(255,255,255,.25);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.brand h1{font-size:17px;font-weight:700;color:#fff}
+.brand p{font-size:11px;color:rgba(255,255,255,.75)}
+.hdr-meta{font-size:12px;color:rgba(255,255,255,.7);text-align:right}
+.hdr-meta strong{color:#fff;font-size:12px;display:block}
+
+/* MARKET TOGGLE */
+.market-tog{display:flex;background:rgba(255,255,255,.2);border-radius:50px;padding:3px;gap:2px}
+.mkt-btn{display:flex;align-items:center;gap:5px;padding:7px 18px;border:none;border-radius:40px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.85);background:transparent;font-family:inherit}
+.mkt-btn.active{background:#fff;color:var(--pink);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+
+/* MAIN */
+.main{max-width:1280px;margin:0 auto;padding:24px 28px 48px}
+
+/* TIME FILTER */
+.time-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.time-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+.time-btn{padding:6px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;background:#fff;color:var(--sub);font-family:inherit}
+.time-btn:hover{border-color:var(--pink-mid);color:var(--pink)}
+.time-btn.active{background:var(--pink);color:#fff;border-color:var(--pink)}
+.date-range-wrap{display:none;align-items:center;gap:6px;margin-left:4px}
+.date-range-wrap.visible{display:flex}
+.date-inp{padding:5px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;font-family:inherit;color:var(--text);background:#fff;cursor:pointer;outline:none;transition:border-color .2s}
+.date-inp:focus{border-color:var(--pink)}
+.date-apply{padding:5px 14px;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:var(--pink);color:#fff;font-family:inherit;transition:opacity .2s}
+.date-apply:hover{opacity:.85}
+.date-sep{font-size:11px;color:var(--muted)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:var(--card);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;transition:transform .2s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi-hdr{display:flex;align-items:center;justify-content:space-between}
+.kpi-lbl{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.4px}
+.kpi-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.kpi-val{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-pink .kpi-ico{background:var(--pink-pale)} .kpi-pink .kpi-val{color:var(--pink)}
+.kpi-green .kpi-ico{background:var(--green-bg)} .kpi-green .kpi-val{color:var(--green)}
+.kpi-amber .kpi-ico{background:var(--amber-bg)} .kpi-amber .kpi-val{color:var(--amber)}
+.kpi-blue .kpi-ico{background:var(--blue-bg)}   .kpi-blue .kpi-val{color:var(--blue)}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1.8fr;gap:14px;margin-bottom:14px}
+.g2r{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+
+/* CHART CARD */
+.cc{background:var(--card);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.cc h3{font-size:13px;font-weight:700;margin-bottom:3px}
+.cc-sub{font-size:11px;color:var(--muted);margin-bottom:14px}
+.donut-wrap{max-width:190px;margin:0 auto}
+
+/* LEGEND */
+.legend{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.leg-row{display:flex;align-items:center;gap:7px}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.leg-lbl{flex:1;font-size:12px;color:var(--sub)}
+.leg-n{font-size:12px;font-weight:700;color:var(--text)}
+.leg-pct{font-size:11px;color:var(--muted);width:32px;text-align:right}
+
+/* TOPIC BAR LIST */
+.topic-list{display:flex;flex-direction:column;gap:8px}
+.topic-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.topic-name{flex:0 0 190px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topic-bar-wrap{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.topic-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--pink),var(--pink-light))}
+.topic-n{font-weight:700;color:var(--text);min-width:16px;text-align:right}
+
+/* FIN DIDN'T KNOW CARD */
+.fin-card{background:var(--amber-bg);border:1.5px solid #fcd34d;border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.fin-card h3{font-size:13px;font-weight:700;color:#92400e;margin-bottom:3px}
+.fin-card .fc-sub{font-size:11px;color:#b45309;margin-bottom:12px}
+.fin-list{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto}
+.fin-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff;border-radius:8px;border:1px solid #fde68a}
+.fin-topic{flex:1;font-size:12px;font-weight:600;color:var(--text)}
+.fin-city{font-size:11px;color:var(--muted);white-space:nowrap}
+.fin-link a{font-size:11px;font-weight:700;color:var(--amber);text-decoration:none;padding:3px 8px;background:var(--amber-bg);border-radius:20px;white-space:nowrap;border:1px solid #fcd34d}
+.fin-link a:hover{background:var(--amber);color:#fff}
+
+/* SATISFACTION */
+.sat-big{font-size:28px;font-weight:800;color:#f59e0b;line-height:1;margin-top:12px}
+.stars{color:#f59e0b;font-size:16px;margin-top:4px}
+
+/* TABLE */
+.tbl-card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:20px}
+.tbl-hdr{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-hdr h3{font-size:13px;font-weight:700}
+.tbl-ct{font-size:11px;font-weight:600;background:var(--pink-pale);color:var(--pink);padding:3px 10px;border-radius:20px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;background:#fafafa;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid #f0f0f5;transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--pink-bg)}
+tbody td{padding:10px 14px;font-size:12px;vertical-align:middle}
+.td-link a{display:inline-flex;align-items:center;gap:4px;color:var(--pink);text-decoration:none;font-weight:600;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--pink-pale);transition:all .15s}
+.td-link a:hover{background:var(--pink);color:#fff}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-assumed{background:var(--green-bg);color:var(--green)}
+.b-confirmed{background:var(--blue-bg);color:var(--blue)}
+.b-escalated{background:var(--amber-bg);color:var(--amber)}
+
+/* SECTION */
+.sec-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.market-sec{display:none}
+.market-sec.visible{display:block}
+
+/* FOOTER */
+.footer{text-align:center;padding:20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);background:var(--card)}
+.footer span{color:var(--pink);font-weight:600}
+
+/* SUGGESTED ARTICLES */
+.articles-card{background:linear-gradient(135deg,#fdf4ff 0%,#fce7f3 100%);border:1.5px solid #f0abdc;border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.articles-card h3{font-size:13px;font-weight:700;color:#831843;margin-bottom:3px}
+.articles-card .ac-sub{font-size:11px;color:#9d174d;margin-bottom:14px}
+.articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.article-item{background:#fff;border:1px solid #f9a8d4;border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px}
+.article-prio{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px}
+.prio-high{background:#fef2f2;color:#dc2626}
+.prio-med{background:#fffbeb;color:#d97706}
+.prio-low{background:#f0fdf4;color:#16a34a}
+.article-body{flex:1}
+.article-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px}
+.article-why{font-size:11px;color:var(--sub)}
+.article-badge{display:inline-block;font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;margin-top:4px}
+.badge-esc{background:var(--amber-bg);color:var(--amber)}
+.badge-new{background:var(--blue-bg);color:var(--blue)}
+.badge-update{background:var(--green-bg);color:var(--green)}
+
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .g2,.g2r,.g3{grid-template-columns:1fr}
+  .main{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="brand">
+      <div class="brand-ico">🤖</div>
+      <div>
+        <h1>Fin AI Dashboard</h1>
+        <p>Intercom Conversations Intelligence</p>
+      </div>
+    </div>
+    <div class="market-tog">
+      <button class="mkt-btn active" id="btn-il" onclick="switchMarket('IL')">🇮🇱 Israel</button>
+      <button class="mkt-btn"        id="btn-us" onclick="switchMarket('US')">🇺🇸 USA</button>
+    </div>
+    <div class="hdr-meta">
+      <strong id="last-updated">—</strong>
+      Powered by Bewith AI
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ═══ ISRAEL ═══ -->
+  <div id="sec-IL" class="market-sec visible">
+    <div class="sec-title">🇮🇱 Israel — HEB Workflow</div>
+
+    <!-- Time filter -->
+    <div class="time-bar" style="flex-wrap:wrap;gap:8px">
+      <span class="time-lbl">Period:</span>
+      <button class="time-btn" onclick="setILPeriod('week')"   id="tp-week">This Week</button>
+      <button class="time-btn active" onclick="setILPeriod('month')" id="tp-month">This Month</button>
+      <button class="time-btn" onclick="setILPeriod('all')"    id="tp-all">All Time <span style="font-size:10px;opacity:.7">(17 Mar – 16 Apr)</span></button>
+      <button class="time-btn" onclick="setILPeriod('custom')" id="tp-custom">📅 Custom Range</button>
+      <div class="date-range-wrap" id="il-date-range">
+        <input type="date" class="date-inp" id="il-date-from" />
+        <span class="date-sep">→</span>
+        <input type="date" class="date-inp" id="il-date-to" />
+        <button class="date-apply" onclick="applyILCustomRange()">Apply</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi kpi-pink">
+        <div class="kpi-hdr"><span class="kpi-lbl">Total Conversations</span><div class="kpi-ico">💬</div></div>
+        <div class="kpi-val" id="il-total">—</div>
+        <div class="kpi-sub">HEB workflow · chat only</div>
+      </div>
+      <div class="kpi kpi-green">
+        <div class="kpi-hdr"><span class="kpi-lbl">Closed by Fin</span><div class="kpi-ico">✅</div></div>
+        <div class="kpi-val" id="il-closed">—</div>
+        <div class="kpi-sub" id="il-closed-pct">Fin resolution rate</div>
+      </div>
+      <div class="kpi kpi-amber">
+        <div class="kpi-hdr"><span class="kpi-lbl">Escalated to Agent</span><div class="kpi-ico">🔺</div></div>
+        <div class="kpi-val" id="il-esc">—</div>
+        <div class="kpi-sub" id="il-esc-pct">Escalation rate</div>
+      </div>
+      <div class="kpi kpi-blue">
+        <div class="kpi-hdr"><span class="kpi-lbl">Avg. Satisfaction</span><div class="kpi-ico">⭐</div></div>
+        <div class="kpi-val" id="il-sat">—</div>
+        <div class="kpi-sub" id="il-sat-sub">Client satisfaction score</div>
+      </div>
+    </div>
+
+    <!-- Row 1: Resolution + Topics -->
+    <div class="g2">
+      <div class="cc">
+        <h3>📊 Resolution States</h3>
+        <div class="cc-sub">How Fin handled each conversation</div>
+        <div class="donut-wrap"><canvas id="ilResChart"></canvas></div>
+        <div class="legend">
+          <div class="leg-row"><div class="leg-dot" style="background:#10b981"></div><span class="leg-lbl">Resolved by Fin</span><span class="leg-n" id="il-leg-resolved">—</span><span class="leg-pct" id="il-leg-resolved-pct"></span></div>
+          <div class="leg-row"><div class="leg-dot" style="background:#f59e0b"></div><span class="leg-lbl">Escalated to agent</span><span class="leg-n" id="il-leg-escalated">—</span><span class="leg-pct" id="il-leg-escalated-pct"></span></div>
+          <div class="leg-row"><div class="leg-dot" style="background:#ef4444"></div><span class="leg-lbl">Negative feedback</span><span class="leg-n" id="il-leg-negative">—</span><span class="leg-pct" id="il-leg-negative-pct"></span></div>
+          <div class="leg-row"><div class="leg-dot" style="background:#e5e7eb"></div><span class="leg-lbl">No resolution recorded</span><span class="leg-n" id="il-leg-none">—</span><span class="leg-pct" id="il-leg-none-pct"></span></div>
+        </div>
+      </div>
+      <div class="cc">
+        <h3>🏷️ Top Conversation Topics</h3>
+        <div class="cc-sub">Categories assigned during conversation</div>
+        <div style="height:240px;position:relative"><canvas id="ilTopicsChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 2: City + Satisfaction -->
+    <div class="g2r">
+      <div class="cc">
+        <h3>📍 Conversations by City Tag</h3>
+        <div class="cc-sub">User tag (TLV, JLM, GT, etc.) — excludes unknown tags</div>
+        <div style="height:190px;position:relative"><canvas id="ilCityChart"></canvas></div>
+      </div>
+      <div class="cc">
+        <h3>⭐ Client Satisfaction</h3>
+        <div class="cc-sub">Ratings collected from conversations</div>
+        <div style="height:130px;position:relative"><canvas id="ilSatChart"></canvas></div>
+        <div class="sat-big" id="il-sat-score">—</div>
+        <div class="stars">★★★★★</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="il-sat-detail">—</div>
+      </div>
+    </div>
+
+    <!-- Suggested Articles for IL -->
+    <div class="articles-card">
+      <h3>💡 Suggested Articles to Improve Fin — Israel</h3>
+      <div class="ac-sub">Based on analysis of conversations Fin could not resolve — topics requiring new knowledge coverage</div>
+      <div class="articles-grid">
+        <div class="article-item">
+          <div class="article-prio prio-high">🔴</div>
+          <div class="article-body">
+            <div class="article-title">How to process a refund for a customer</div>
+            <div class="article-why">The most critical issue — 24+ escalated conversations about refund requests. Fin identifies the request but cannot perform financial actions.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-high">🔴</div>
+          <div class="article-body">
+            <div class="article-title">Managing admin permissions: add, change, remove</div>
+            <div class="article-why">19+ conversations about adding admins, changing permissions, removing login messages. Fin escalates because its guidance causes it to give up too quickly.</div>
+            <span class="article-badge badge-update">↑ Update existing article</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-med">🟡</div>
+          <div class="article-body">
+            <div class="article-title">How to generate a revenue report per event</div>
+            <div class="article-why">Admins seek per-event reports broken down by date — the data exists but is unclear. Fin cannot explain the organizational management panel.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-med">🟡</div>
+          <div class="article-body">
+            <div class="article-title">Message package status and what to do when it runs out</div>
+            <div class="article-why">7 conversations about message quotas — admins do not know what happens when the quota runs out or how to purchase more.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-med">🟡</div>
+          <div class="article-body">
+            <div class="article-title">Restore a past event and open a new date</div>
+            <div class="article-why">Recurring requests (often in the context of the war) to restore old events. Fin is unaware of this option and cannot perform the action.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-low">🟢</div>
+          <div class="article-body">
+            <div class="article-title">Share an event between community spaces</div>
+            <div class="article-why">Admins want event sharing to appear automatically in Fin — an article explaining the two-way approval process is needed.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fin Didn't Know Card -->
+    <div class="fin-card">
+      <h3>⚠️ Fin Could Not Answer — Escalated Conversations</h3>
+      <div class="fc-sub">Conversations escalated to a human agent — Fin could not resolve. Each one links directly to Intercom.</div>
+      <div class="fin-list" id="il-fin-list">—</div>
+    </div>
+  </div><!-- /IL -->
+
+
+  <!-- ═══ USA ═══ -->
+  <div id="sec-US" class="market-sec">
+    <div class="sec-title">🇺🇸 USA — ENG Workflow · Verified clients only</div>
+
+    <!-- Time filter -->
+    <div class="time-bar" style="flex-wrap:wrap;gap:8px">
+      <span class="time-lbl">Period:</span>
+      <button class="time-btn" onclick="setUSPeriod('week')"   id="us-tp-week">This Week</button>
+      <button class="time-btn" onclick="setUSPeriod('month')"  id="us-tp-month">This Month</button>
+      <button class="time-btn active" onclick="setUSPeriod('all')" id="us-tp-all">All Time <span style="font-size:10px;opacity:.7">(18 Mar – 13 Apr)</span></button>
+      <button class="time-btn" onclick="setUSPeriod('custom')" id="us-tp-custom">📅 Custom Range</button>
+      <div class="date-range-wrap" id="us-date-range">
+        <input type="date" class="date-inp" id="us-date-from" />
+        <span class="date-sep">→</span>
+        <input type="date" class="date-inp" id="us-date-to" />
+        <button class="date-apply" onclick="applyUSCustomRange()">Apply</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi kpi-pink">
+        <div class="kpi-hdr"><span class="kpi-lbl">Total Conversations</span><div class="kpi-ico">💬</div></div>
+        <div class="kpi-val" id="us-total">—</div>
+        <div class="kpi-sub" id="us-total-sub">Verified US municipal clients</div>
+      </div>
+      <div class="kpi kpi-green">
+        <div class="kpi-hdr"><span class="kpi-lbl">Resolved by Fin</span><div class="kpi-ico">✅</div></div>
+        <div class="kpi-val" id="us-closed">—</div>
+        <div class="kpi-sub" id="us-closed-pct">Fin resolution rate</div>
+      </div>
+      <div class="kpi kpi-amber">
+        <div class="kpi-hdr"><span class="kpi-lbl">Escalated to Agent</span><div class="kpi-ico">🔺</div></div>
+        <div class="kpi-val" id="us-esc">—</div>
+        <div class="kpi-sub" id="us-esc-pct">Escalation rate</div>
+      </div>
+      <div class="kpi kpi-blue">
+        <div class="kpi-hdr"><span class="kpi-lbl">Confirmed by User</span><div class="kpi-ico">✔️</div></div>
+        <div class="kpi-val" id="us-confirmed">—</div>
+        <div class="kpi-sub" id="us-confirmed-sub">User explicitly confirmed resolution</div>
+      </div>
+    </div>
+
+    <!-- Row 1: Donut + City -->
+    <div class="g2">
+      <div class="cc">
+        <h3>📊 Resolution States</h3>
+        <div class="cc-sub">How Fin handled each US conversation</div>
+        <div class="donut-wrap"><canvas id="usResChart"></canvas></div>
+        <div class="legend">
+          <div class="leg-row"><div class="leg-dot" style="background:#10b981"></div><span class="leg-lbl">Resolved by Fin</span><span class="leg-n" id="us-leg-resolved">—</span><span class="leg-pct" id="us-leg-resolved-pct"></span></div>
+          <div class="leg-row"><div class="leg-dot" style="background:#f59e0b"></div><span class="leg-lbl">Escalated to agent</span><span class="leg-n" id="us-leg-escalated">—</span><span class="leg-pct" id="us-leg-escalated-pct"></span></div>
+        </div>
+      </div>
+      <div class="cc">
+        <h3>📍 Conversations by Municipality</h3>
+        <div class="cc-sub">Source URL domain → municipality</div>
+        <div style="height:260px;position:relative"><canvas id="usCityChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Topics + Fin didn't know -->
+    <div class="g2r" style="margin-bottom:14px">
+      <div class="cc">
+        <h3>🏷️ Specific Questions Asked</h3>
+        <div class="cc-sub">Exact Fin AI Title — what US clients needed help with</div>
+        <div style="margin-top:10px" class="topic-list" id="usTopicsList"></div>
+      </div>
+      <div class="fin-card" style="margin-bottom:0">
+        <h3>⚠️ Fin Didn't Know — Escalated</h3>
+        <div class="fc-sub">US conversations where Fin escalated to a human agent</div>
+        <div class="fin-list" id="us-fin-list"></div>
+      </div>
+    </div>
+
+    <!-- Suggested Articles for US -->
+    <div class="articles-card" style="margin-top:14px">
+      <h3>💡 Suggested Articles to Improve Fin — USA</h3>
+      <div class="ac-sub">Based on US conversation patterns — topics where Fin escalated or gave incomplete answers</div>
+      <div class="articles-grid">
+        <div class="article-item">
+          <div class="article-prio prio-high">🔴</div>
+          <div class="article-body">
+            <div class="article-title">How to add and manage admin users</div>
+            <div class="article-why">Escalated conversation (Manassas Park). Admin setup is one of the first things new US municipalities ask about — Fin needs clear step-by-step guidance.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-high">🔴</div>
+          <div class="article-body">
+            <div class="article-title">How to scan tickets at the venue</div>
+            <div class="article-why">Escalated conversation (Hutto, TX). Fin gave no actionable answer. Municipalities need a clear guide for door-scanning workflows.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-med">🟡</div>
+          <div class="article-body">
+            <div class="article-title">Customizing event notifications and reminders</div>
+            <div class="article-why">3 conversations (West Hollywood) about notification settings — Fin resolved them but answers could be stronger with a dedicated article.</div>
+            <span class="article-badge badge-update">↑ Improve existing content</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-med">🟡</div>
+          <div class="article-body">
+            <div class="article-title">Generating reports and finding payment records</div>
+            <div class="article-why">Multiple US clients asked about receipts, registrant lists, and analytics. Fin resolved most but an English-language financial report guide is missing.</div>
+            <span class="article-badge badge-new">✦ New article needed</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-low">🟢</div>
+          <div class="article-body">
+            <div class="article-title">Understanding secondary objects and how to use them</div>
+            <div class="article-why">Asked by West Hollywood. Fin resolved it but this concept is unique to Bewith — a clear explainer would reduce future questions.</div>
+            <span class="article-badge badge-update">↑ Improve existing content</span>
+          </div>
+        </div>
+        <div class="article-item">
+          <div class="article-prio prio-low">🟢</div>
+          <div class="article-body">
+            <div class="article-title">Customizing registration confirmation pages</div>
+            <div class="article-why">Hutto asked about changing language on the confirmation page. Fin resolved it — but adding examples and screenshots would make answers faster.</div>
+            <span class="article-badge badge-update">↑ Improve existing content</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="tbl-card">
+      <div class="tbl-hdr">
+        <h3>💬 All US Conversations</h3>
+        <span class="tbl-ct" id="us-tbl-ct">22 verified conversations</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Topic / What was asked</th>
+            <th>Municipality</th>
+            <th>Resolution</th>
+            <th>Open</th>
+          </tr>
+        </thead>
+        <tbody id="usTableBody"></tbody>
+      </table>
+    </div>
+  </div><!-- /US -->
+
+</main>
+
+<footer class="footer">
+  Built for <span>Bewith</span> · Fin AI Analytics · Intercom ENG &amp; HEB workflows · Internal &amp; non-US community conversations excluded
+</footer>
+
+<script>
+
+// ════ IL DATA (360 conversations) ════
+const IL_DATA = [{"id":"215473940953922","ts":1776346318,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473940827234","ts":1776345643,"t":"הגדרות / הרשאות","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473883963793","ts":1776074917,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473940466192","ts":1776343825,"t":"תשלום / כספים","c":"Nasher","s":"escalated","r":0,"f":0},{"id":"215473938283780","ts":1776333267,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473936199536","ts":1776315878,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473940340501","ts":1776343109,"t":"אירוע / פעילות","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473841589152","ts":1775748719,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473922844838","ts":1776256133,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473937426423","ts":1776325920,"t":"תשלום / כספים","c":"GE","s":"escalated","r":0,"f":0},{"id":"215473940227100","ts":1776342409,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473882899533","ts":1776067766,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473920958111","ts":1776243262,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473939780327","ts":1776341338,"t":"Other","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473840855818","ts":1775745589,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473939603765","ts":1776340627,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473937621201","ts":1776327429,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473939265946","ts":1776337903,"t":"תשלום / כספים","c":"GT","s":"assumed_resolution","r":0,"f":1},{"id":"215473925207565","ts":1776264309,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473939271158","ts":1776337949,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473938091620","ts":1776331455,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473919211787","ts":1776229931,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473920380181","ts":1776239375,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473886296519","ts":1776086325,"t":"רישום / הרשמה","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473901177740","ts":1776159308,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473937204665","ts":1776324535,"t":"Other","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473936098237","ts":1776314840,"t":"תשלום / כספים","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473885612679","ts":1776084222,"t":"תשלום / כספים","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473936874006","ts":1776321894,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473936802974","ts":1776321270,"t":"Other","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473919742801","ts":1776234680,"t":"Other","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473925183699","ts":1776264205,"t":"אירוע / פעילות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473883997826","ts":1776075099,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473900899323","ts":1776157010,"t":"Other","c":"GT","s":"escalated","r":0,"f":0},{"id":"215473920401250","ts":1776239589,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473900258308","ts":1776152019,"t":"אירוע / פעילות","c":"JLM","s":"escalated","r":0,"f":0},{"id":"215473919918914","ts":1776236392,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473921667685","ts":1776248486,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473920889288","ts":1776242691,"t":"רישום / הרשמה","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473872612559","ts":1775981364,"t":"Other","c":"GE","s":"escalated","r":0,"f":0},{"id":"215473888126278","ts":1776092928,"t":"תשלום / כספים","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473919235719","ts":1776230115,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473884132381","ts":1776076156,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473905378332","ts":1776176649,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473839558120","ts":1775741647,"t":"תשלום / כספים","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473904437471","ts":1776173091,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473901876525","ts":1776164547,"t":"הודעות / התראות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473904835021","ts":1776174981,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473901087657","ts":1776158523,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473873264516","ts":1775990307,"t":"Other","c":"JLM","s":"assumed_resolution","r":0,"f":1},{"id":"215473901147897","ts":1776159071,"t":"תשלום / כספים","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473900621395","ts":1776154879,"t":"תשלום / כספים","c":"Nasher","s":"escalated","r":4,"f":0},{"id":"215473882702377","ts":1776066629,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473872910294","ts":1775984695,"t":"ביטול / החזר","c":"GT","s":"escalated","r":5,"f":0},{"id":"215473836562773","ts":1775725165,"t":"Other","c":"GT","s":"escalated","r":0,"f":0},{"id":"215473882996909","ts":1776068217,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473900455230","ts":1776153588,"t":"רישום / הרשמה","c":"BNSIA","s":"assumed_resolution","r":5,"f":1},{"id":"215473886148136","ts":1776085751,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473900582122","ts":1776154549,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473899623043","ts":1776146593,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473887783550","ts":1776091830,"t":"Other","c":"Bat Yam","s":"escalated","r":0,"f":0},{"id":"215473873207903","ts":1775989410,"t":"Other","c":"Misdar","s":"escalated","r":0,"f":0},{"id":"215473873057248","ts":1775987052,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473884721511","ts":1776079156,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473884583014","ts":1776078648,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473882278915","ts":1776064207,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473884045887","ts":1776075346,"t":"אירוע / פעילות","c":"TLV","s":"confirmed_resolution","r":0,"f":1},{"id":"215473883942266","ts":1776074834,"t":"Other","c":"TLV","s":"confirmed_resolution","r":0,"f":1},{"id":"215473883684079","ts":1776073088,"t":"Other","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473873205936","ts":1775989375,"t":"הודעות / התראות","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473883282888","ts":1776070675,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473883278661","ts":1776070633,"t":"Other","c":"TLV","s":"confirmed_resolution","r":0,"f":1},{"id":"215473872538783","ts":1775981094,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473882115226","ts":1776063900,"t":"רישום / הרשמה","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473872974360","ts":1775985727,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473872991930","ts":1775986008,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473872874041","ts":1775984229,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473873286733","ts":1775990652,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473872331942","ts":1775978651,"t":"Other","c":"Chosen","s":"escalated","r":5,"f":0},{"id":"215473872964597","ts":1775985563,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473873509316","ts":1775992884,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473871974501","ts":1775973921,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473872178321","ts":1775976553,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473873151712","ts":1775988530,"t":"Other","c":"Misdar","s":"assumed_resolution","r":0,"f":1},{"id":"215473872710457","ts":1775981639,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473840530401","ts":1775744531,"t":"Other","c":"TLV","s":"escalated","r":2,"f":0},{"id":"215473872459986","ts":1775980495,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473872426478","ts":1775980062,"t":"רישום / הרשמה","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473840093745","ts":1775743876,"t":"רישום / הרשמה","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473872181650","ts":1775976625,"t":"אירוע / פעילות","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473872022524","ts":1775974493,"t":"קישור / שיתוף","c":"BS","s":"assumed_resolution","r":0,"f":1},{"id":"215473872175591","ts":1775976501,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473872096077","ts":1775975388,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473838674576","ts":1775737779,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473836119168","ts":1775721677,"t":"Other","c":"JLM","s":"escalated","r":0,"f":0},{"id":"215473836250501","ts":1775722499,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473839549821","ts":1775741610,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":5,"f":1},{"id":"215473838742159","ts":1775738237,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473836174159","ts":1775722073,"t":"הגדרות / הרשאות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473836235571","ts":1775722428,"t":"Other","c":"Netanya","s":"escalated","r":0,"f":0},{"id":"215473838725667","ts":1775738097,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473835014876","ts":1775712856,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473836934460","ts":1775728294,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473793266103","ts":1775492796,"t":"תקלה / בעיה","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473835050910","ts":1775713394,"t":"Other","c":"BY","s":"escalated","r":5,"f":0},{"id":"215473836525442","ts":1775724997,"t":"אירוע / פעילות","c":"Misdar","s":"escalated","r":0,"f":0},{"id":"215473836728619","ts":1775726207,"t":"Other","c":"GT","s":"confirmed_resolution","r":0,"f":1},{"id":"215473836279971","ts":1775722671,"t":"תשלום / כספים","c":"JLM","s":"assumed_resolution","r":0,"f":1},{"id":"215473790827183","ts":1775482182,"t":"תשלום / כספים","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473788181420","ts":1775463010,"t":"תשלום / כספים","c":"Vbachayim","s":"escalated","r":5,"f":0},{"id":"215473788759681","ts":1775469884,"t":"Other","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473695844130","ts":1774862995,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473761538057","ts":1775218623,"t":"הודעות / התראות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473788734742","ts":1775469605,"t":"אירוע / פעילות","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473781264897","ts":1775395426,"t":"אירוע / פעילות","c":"Unknown","s":"assumed_resolution","r":5,"f":1},{"id":"215473780097360","ts":1775379023,"t":"Other","c":"Unknown","s":"negative_feedback","r":0,"f":0},{"id":"215473775726298","ts":1775323171,"t":"הודעות / התראות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473780028314","ts":1775377725,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473780375024","ts":1775383762,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473716108704","ts":1774961937,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473700165566","ts":1774881120,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473761177276","ts":1775217646,"t":"הודעות / התראות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473696041134","ts":1774864214,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473712133464","ts":1774942542,"t":"תקלה / בעיה","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473700909158","ts":1774884344,"t":"אירוע / פעילות","c":"ICE","s":"escalated","r":0,"f":0},{"id":"215473693629243","ts":1774854106,"t":"דוחות / נרשמים","c":"Misdar","s":"escalated","r":0,"f":0},{"id":"215473704116371","ts":1774894969,"t":"אירוע / פעילות","c":"Misdar","s":"escalated","r":0,"f":0},{"id":"215473713516164","ts":1774952361,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473632714273","ts":1774455482,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473685731403","ts":1774791728,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473695530382","ts":1774861276,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473695618347","ts":1774861669,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473696243696","ts":1774865663,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473684555751","ts":1774777543,"t":"אירוע / פעילות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473694968158","ts":1774858896,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473695115478","ts":1774859366,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473684475454","ts":1774776219,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473697494255","ts":1774871696,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473694739754","ts":1774857893,"t":"אירוע / פעילות","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473696803323","ts":1774869136,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473693378286","ts":1774851444,"t":"Other","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473642848301","ts":1774520121,"t":"Other","c":"Unknown","s":"escalated","r":3,"f":0},{"id":"215473684470359","ts":1774776134,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473684580692","ts":1774777935,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473684803322","ts":1774781300,"t":"תשלום / כספים","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473630847595","ts":1774452223,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473643974089","ts":1774526722,"t":"Other","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473686389588","ts":1774794019,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473683740021","ts":1774768619,"t":"Other","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473685649410","ts":1774790825,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473643953905","ts":1774526681,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473683931697","ts":1774771356,"t":"אירוע / פעילות","c":"GT","s":"escalated","r":0,"f":0},{"id":"215473684714859","ts":1774779985,"t":"Other","c":"GVT","s":"assumed_resolution","r":0,"f":1},{"id":"215473683546202","ts":1774765626,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473684421798","ts":1774775320,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473642143792","ts":1774517542,"t":"קישור / שיתוף","c":"S.Sharon","s":"assumed_resolution","r":0,"f":1},{"id":"215473679048630","ts":1774716531,"t":"Other","c":"GT","s":"escalated","r":0,"f":0},{"id":"215473594797312","ts":1774263859,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473645611605","ts":1774532505,"t":"Other","c":"ICE","s":"escalated","r":0,"f":0},{"id":"215473646553506","ts":1774536247,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473583376977","ts":1774166162,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473646645689","ts":1774536683,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473644861066","ts":1774529944,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473643080265","ts":1774521893,"t":"תשלום / כספים","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473615195692","ts":1774366499,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473645344897","ts":1774531395,"t":"Other","c":"GT","s":"assumed_resolution","r":0,"f":1},{"id":"215473645459283","ts":1774531803,"t":"Other","c":"ICE","s":"assumed_resolution","r":0,"f":1},{"id":"215473645010483","ts":1774530547,"t":"Other","c":"TLV","s":"confirmed_resolution","r":0,"f":1},{"id":"215473634751290","ts":1774463932,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473608577566","ts":1774337084,"t":"תשלום / כספים","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473608846605","ts":1774339583,"t":"Other","c":"BNS","s":"escalated","r":0,"f":0},{"id":"215473641353031","ts":1774511960,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473612158101","ts":1774355997,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473625511790","ts":1774425591,"t":"אירוע / פעילות","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473550176989","ts":1773933760,"t":"תשלום / כספים","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473610401631","ts":1774351380,"t":"תשלום / כספים","c":"BNS","s":"escalated","r":0,"f":0},{"id":"215473628214837","ts":1774442874,"t":"קישור / שיתוף","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473642258540","ts":1774517921,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473641742731","ts":1774514903,"t":"Other","c":"Nasher","s":"escalated","r":0,"f":0},{"id":"215473641474880","ts":1774512595,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473625497962","ts":1774425397,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473625120343","ts":1774422507,"t":"אירוע / פעילות","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473582994156","ts":1774161470,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473583494432","ts":1774166957,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473625408368","ts":1774424587,"t":"Other","c":"Unknown","s":"escalated","r":4,"f":0},{"id":"215473612992812","ts":1774359293,"t":"Other","c":"Unknown","s":"escalated","r":4,"f":0},{"id":"215473629209579","ts":1774446748,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473627251912","ts":1774438122,"t":"רישום / הרשמה","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473586531900","ts":1774193772,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473610746575","ts":1774353105,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473628225563","ts":1774442926,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473610112934","ts":1774349901,"t":"Other","c":"BY","s":"assumed_resolution","r":0,"f":1},{"id":"215473584375757","ts":1774176218,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473627461934","ts":1774439774,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473626279526","ts":1774430725,"t":"תשלום / כספים","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473608620899","ts":1774337473,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473614710079","ts":1774365102,"t":"תשלום / כספים","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473625167908","ts":1774422868,"t":"אירוע / פעילות","c":"Unknown","s":"assumed_resolution","r":5,"f":1},{"id":"215473625268073","ts":1774423928,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473614017703","ts":1774362576,"t":"אירוע / פעילות","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473613717287","ts":1774361497,"t":"הודעות / התראות","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473613362862","ts":1774360672,"t":"אירוע / פעילות","c":"GVT","s":"escalated","r":0,"f":0},{"id":"215473612373054","ts":1774356706,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473612912478","ts":1774358831,"t":"הודעות / התראות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473612568029","ts":1774357613,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473611756466","ts":1774355361,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473595898709","ts":1774269113,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473597764324","ts":1774275256,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473592841868","ts":1774252319,"t":"אירוע / פעילות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473599037295","ts":1774279767,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473594509574","ts":1774261329,"t":"Other","c":"BNSIA","s":"assumed_resolution","r":5,"f":1},{"id":"215473609323638","ts":1774343246,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473586571393","ts":1774194278,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473595179791","ts":1774266897,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473514113260","ts":1773748871,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473594018944","ts":1774258500,"t":"אירוע / פעילות","c":"Azor","s":"escalated","r":0,"f":0},{"id":"215473601194416","ts":1774289395,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473600764810","ts":1774287420,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473512056064","ts":1773734035,"t":"Other","c":"JLM","s":"escalated","r":0,"f":0},{"id":"215473531314094","ts":1773841224,"t":"Other","c":"JLM","s":"assumed_resolution","r":0,"f":1},{"id":"215473544245778","ts":1773906612,"t":"Other","c":"Misdar","s":"escalated","r":0,"f":0},{"id":"215473584196206","ts":1774173371,"t":"רישום / הרשמה","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473597813967","ts":1774275435,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473594952572","ts":1774265265,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473583346417","ts":1774165642,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473584729295","ts":1774180879,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473583093074","ts":1774163002,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473593527059","ts":1774256408,"t":"תשלום / כספים","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473513198168","ts":1773742729,"t":"אירוע / פעילות","c":"GT","s":"escalated","r":0,"f":0},{"id":"215473547275553","ts":1773924265,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473582690321","ts":1774155890,"t":"Other","c":"Digitale","s":"escalated","r":0,"f":0},{"id":"215473584791595","ts":1774181180,"t":"Other","c":"Unknown","s":"escalated","r":4,"f":0},{"id":"215473592588024","ts":1774251396,"t":"אירוע / פעילות","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473548207034","ts":1773927876,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473587360961","ts":1774201626,"t":"תשלום / כספים","c":"TLV","s":"confirmed_resolution","r":0,"f":1},{"id":"215473584914320","ts":1774182710,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473584776861","ts":1774181107,"t":"תשלום / כספים","c":"TLV","s":"confirmed_resolution","r":0,"f":1},{"id":"215473583595010","ts":1774168701,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473582962522","ts":1774160864,"t":"אירוע / פעילות","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473545562384","ts":1773915999,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473546283757","ts":1773919087,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473582868865","ts":1774159345,"t":"Other","c":"Unknown","s":"escalated","r":4,"f":0},{"id":"215473584061248","ts":1774171233,"t":"Other","c":"Unknown","s":"confirmed_resolution","r":0,"f":1},{"id":"215473583746512","ts":1774170365,"t":"דוחות / נרשמים","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473582958343","ts":1774160786,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473548567114","ts":1773929332,"t":"אירוע / פעילות","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473545005821","ts":1773912436,"t":"Other","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473528242150","ts":1773823324,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473511866296","ts":1773732100,"t":"Other","c":"GT","s":"escalated","r":5,"f":0},{"id":"215473583021819","ts":1774161746,"t":"קישור / שיתוף","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473582967366","ts":1774160966,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473582940000","ts":1774160408,"t":"Other","c":"Ashkelon","s":"assumed_resolution","r":0,"f":1},{"id":"215473582924602","ts":1774160107,"t":"Other","c":"Ashkelon","s":"assumed_resolution","r":0,"f":1},{"id":"215473582860644","ts":1774159210,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473533479345","ts":1773848959,"t":"Other","c":"Unknown","s":"assumed_resolution","r":0,"f":1},{"id":"215473546442466","ts":1773919979,"t":"תשלום / כספים","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473544496216","ts":1773908780,"t":"תשלום / כספים","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473513466566","ts":1773745050,"t":"Other","c":"JLM","s":"escalated","r":0,"f":0},{"id":"215473531422633","ts":1773841876,"t":"Other","c":"TLV","s":"assumed_resolution","r":0,"f":1},{"id":"215473532474143","ts":1773845958,"t":"הגדרות / הרשאות","c":"TLV","s":"escalated","r":0,"f":0},{"id":"215473545602971","ts":1773916324,"t":"Other","c":"Unknown","s":"escalated","r":4,"f":0},{"id":"215473543681721","ts":1773901002,"t":"Other","c":"Unknown","s":"escalated","r":5,"f":0},{"id":"215473529896261","ts":1773835248,"t":"Other","c":"TLV","s":"escalated","r":5,"f":0},{"id":"215473528350114","ts":1773824123,"t":"Other","c":"Unknown","s":"escalated","r":0,"f":0},{"id":"215473534470762","ts":1773853225,"t":"אירוע / פעילות","c":"ICE","s":"escalated","r":0,"f":0},{"id":"215473544916336","ts":1773911676,"t":"קישור / שיתוף","c":"Unknown","s":"escalated","r":5,"f":0}];
+
+// ════ US DATA ════
+const US_DATA = [
+  {id:"215473891262342",ts:1776104122,question:"how to add admins",topic:"Manage Admin Permissions",resolution:"escalated",city:"Manassas Park, VA"},
+  {id:"215473814781632",ts:1775592924,question:"Can I send a message out with a link?",topic:"Send message with link",resolution:"assumed",city:"Hutto, TX"},
+  {id:"215473807645285",ts:1775569665,question:"can we generate a receipt for a participant?",topic:"Find Payments & Receipts",resolution:"assumed",city:"Winter Haven, FL"},
+  {id:"215473801625663",ts:1775539354,question:"how do I use the share between communities feature?",topic:"Share between communities",resolution:"assumed",city:"Glendale, AZ"},
+  {id:"215473798673462",ts:1775516373,question:"how do i limit the number of registrations?",topic:"Limit event registrations",resolution:"assumed",city:"Scottsdale, AZ"},
+  {id:"215473819283058",ts:1775624347,question:"how to send msgs from the backend",topic:"Send backend messages",resolution:"assumed",city:"Wasco, CA"},
+  {id:"215473796945960",ts:1775507975,question:"how do i scan tickets at the venue?",topic:"Scan tickets at venue",resolution:"escalated",city:"Hutto, TX"},
+  {id:"215473796261662",ts:1775505606,question:"How to view past events",topic:"View past events",resolution:"assumed",city:"Allen, TX"},
+  {id:"215473752904565",ts:1775151739,question:"what is a secondary object?",topic:"Secondary object explained",resolution:"assumed",city:"West Hollywood, CA"},
+  {id:"215473752605503",ts:1775149906,question:"where do we customize notifications?",topic:"Customize audience notifications",resolution:"assumed",city:"West Hollywood, CA"},
+  {id:"215473752603797",ts:1775149894,question:"how do I change the notification settings for events?",topic:"Event registration notifications",resolution:"assumed",city:"West Hollywood, CA"},
+  {id:"215473847064926",ts:1775768866,question:"use a later date to open registration for early access",topic:"Registration enable toggle",resolution:"confirmed",city:"Seguin, TX"},
+  {id:"215473707409566",ts:1774904345,question:"what are the image specs for thumbnail images?",topic:"Thumbnail image specs",resolution:"assumed",city:"Glendale, AZ"},
+  {id:"215473721168436",ts:1774974638,question:"Is it possible to edit the automatic reply for registrations?",topic:"Edit automatic reply",resolution:"confirmed",city:"Antelope Valley, CA"},
+  {id:"215473630721847",ts:1774452029,question:"event says free - how to change that?",topic:"Change event price display",resolution:"assumed",city:"Tamarac, FL"},
+  {id:"215473653118580",ts:1774556749,question:"why are past events still showing?",topic:"Past events still visible",resolution:"assumed",city:"Ojai, CA"},
+  {id:"215473651589801",ts:1774551510,question:"how do I send a message to registrants",topic:"Send message to registrants",resolution:"assumed",city:"Hutto, TX"},
+  {id:"215473598400182",ts:1774278046,question:"who registered for the gladiator watch party",topic:"View event registrant list",resolution:"assumed",city:"Peachtree Corners, GA"},
+  {id:"215473553391312",ts:1773943991,question:"how to customize the language on registration confirmed page",topic:"Customize registration page language",resolution:"assumed",city:"Hutto, TX"},
+  {id:"215473555265323",ts:1773954727,question:"none of the ticket info is populating in the Resources page",topic:"Resources page data not loading",resolution:"assumed",city:"Allen, TX"},
+  {id:"215473537648088",ts:1773866148,question:"how do i change the register button text?",topic:"Change register button",resolution:"assumed",city:"West Hollywood, CA"},
+  {id:"215473524399135",ts:1773800000,question:"How to see analytics for my event",topic:"View event analytics",resolution:"assumed",city:"Allen, TX"},
+];
+
+
+// ════ FEATURE HELP TOPIC OVERRIDES (from Intercom research) ════
+// Conversations where the real topic is known via Feature Help Topic
+const FEATURE_HELP_MAP = {
+  // Payments / Receipts / Refunds
+  '215473937426423':'Payments / Receipts / Refunds',
+  '215473977666667':'Payments / Receipts / Refunds',
+  '215473977852145':'Payments / Receipts / Refunds',
+  '215473807645285':'Payments / Receipts / Refunds',
+  '215473940466192':'Payments / Receipts / Refunds',
+  '215473980149031':'Payments / Receipts / Refunds',
+  '215473938283780':'Payments / Receipts / Refunds',
+  '215473977774086':'Payments / Receipts / Refunds',
+  '215473977530345':'Payments / Receipts / Refunds',
+  '215473977295079':'Payments / Receipts / Refunds',
+  '215473977286635':'Payments / Receipts / Refunds',
+  '215473919742801':'Payments / Receipts / Refunds',
+  '215473940227100':'Payments / Receipts / Refunds',
+  '215473925207565':'Payments / Receipts / Refunds',
+  '215473840855818':'Payments / Receipts / Refunds',
+  '215473919211787':'Payments / Receipts / Refunds',
+  '215473939265946':'Payments / Receipts / Refunds',
+  '215473883997826':'Payments / Receipts / Refunds',
+  '215473872612559':'Payments / Receipts / Refunds',
+  '215473888126278':'Payments / Receipts / Refunds',
+  '215473901876525':'Payments / Receipts / Refunds',
+  '215473904835021':'Payments / Receipts / Refunds',
+  '215473901147897':'Payments / Receipts / Refunds',
+  '215473872910294':'Payments / Receipts / Refunds',
+  '215473887783550':'Payments / Receipts / Refunds',
+  '215473883282888':'Payments / Receipts / Refunds',
+  '215473882115226':'Payments / Receipts / Refunds',
+  '215473872974360':'Payments / Receipts / Refunds',
+  '215473872331942':'Payments / Receipts / Refunds',
+  '215473872459986':'Payments / Receipts / Refunds',
+  '215473297215395':'Payments / Receipts / Refunds',
+  // Admin Permissions & Space Settings
+  '215473939271158':'Admin Permissions & Space Settings',
+  '215473978639090':'Admin Permissions & Space Settings',
+  '215473940953922':'Admin Permissions & Space Settings',
+  '215473925183699':'Admin Permissions & Space Settings',
+  '215473922844838':'Admin Permissions & Space Settings',
+  '215473940827234':'Admin Permissions & Space Settings',
+  '215473927263912':'Admin Permissions & Space Settings',
+  '215473884132381':'Admin Permissions & Space Settings',
+  '215473882996909':'Admin Permissions & Space Settings',
+  '215473886148136':'Admin Permissions & Space Settings',
+  '215473891262342':'Admin Permissions & Space Settings',
+  '215473884045887':'Admin Permissions & Space Settings',
+  '215473872991930':'Admin Permissions & Space Settings',
+  '215473872874041':'Admin Permissions & Space Settings',
+  '215473872181650':'Admin Permissions & Space Settings',
+  '215473872175591':'Admin Permissions & Space Settings',
+  // Message Package Status
+  '215473392000830':'Message Package Status',
+  '215473228880298':'Message Package Status',
+  '215473243663087':'Message Package Status',
+  '215473873205936':'Message Package Status',
+  '215473872022524':'Message Package Status',
+  '215473752603797':'Message Package Status',
+  // Newsletter / Marketing Content
+  '215473940340501':'Newsletter / Marketing Content',
+  '215473920889288':'Newsletter / Marketing Content',
+  '215473840093745':'Newsletter / Marketing Content',
+  // Coupons & Discounts
+  '215473978397310':'Coupons & Discounts',
+  '215473919235719':'Coupons & Discounts',
+  // Calendar Widget
+  '215473873057248':'Calendar Widget',
+  '215473883942266':'Calendar Widget',
+  // ── Uncategorized escalated conversations (researched individually) ──
+  '215473883963793':'Restore / Reopen Past Event with New Date',
+  '215473841589152':'Add Participants to Activity',
+  '215473920958111':'Share Event to Environment / Change Event Price',
+  '215473939603765':'Digital Required Fields / Share Events',
+  '215473937621201':'Ticket Limit / Multiple Purchase Restriction',
+  '215473938091620':'Event Display Order on Page',
+  '215473920380181':'Save Event Changes Failed',
+  '215473901177740':'Past Event Continues Appearing on Homepage',
+  '215473900899323':'Upload Participant List to Object',
+  '215473920401250':'Login to Backend / Verification Code Not Sent',
+  '215473919918914':'Training Request / Zoom Link',
+  '215473905378332':'Remove Past Events from Main Page',
+  '215473904437471':'Remove Past Events from Main Page',
+  '215473882702377':'Set Default Message for Events',
+  '215473836562773':'Payments / Receipts / Refunds',
+  '215473873207903':'Auto-message Setting — Donation Amount Variable Invalid',
+  '215473882278915':'Access to Backend System',
+  '215473872538783':'Change Username / Account Details',
+  '215473873286733':'Registrant List Not Showing',
+  '215473872964597':'Main Page Not Appearing / Disappeared',
+  '215473873509316':'Missing Budget Item in Space / Object',
+  '215473871974501':'Training Request / Zoom Link',
+  '215473872178321':'Download Registrant Report Urgently',
+  '215473872710457':'Assign / Match Event to Environment',
+  '215473840530401':'Mobile Device Contact Field Fill Issue',
+  '215473838674576':'Restore Room Reservation — Find Eye Button',
+  '215473838742159':'Activate Subscription / Membership Tab for Event',
+  '215473836235571':'Refund Failed — No Balance in Payment Account',
+  '215473835014876':'Admin Permission — Login with New Username',
+  '215473835050910':'Approve Pending Community Members / Report Permission',
+  '215473700165566':'Bug — Registrant List Loading Slowly / Not Showing',
+  '215473696041134':'Download Registrant List by Ticket / Focus',
+  '215473836119168':'Remove Questions from Registration Form',
+  '215473836934460':'Cover Image Cropped — Invalid Dimensions',
+  '215473695844130':'Registration Auto-save Settings',
+  '215473716108704':'Payment Collection Issue — Payment Blocked',
+  '215473713516164':'Add Leader to Object — Access to Registrant List',
+  '215473685731403':'Duplicate Registration — Register Again Option',
+  '215473695530382':'Duplicate Event — Budget Item Not Copied',
+  '215473695618347':'Organization Name Not in Messages — Showing as GUEST',
+  '215473696243696':'Cancel Registration & List Not Loading / Partial Refund',
+  '215473693378286':'Refund Declined / Failed in System',
+  '215473684470359':'Request Admin Permission — Approve Access',
+  '215473684580692':'Edit Main Space — Homepage Disappeared',
+  '215473630847595':'Invoices from Another Space with Wrong Contact Info',
+  '215473686389588':'Refund Failed — Bit Transfer Not Completed',
+  '215473683740021':'Refund Failed — System Error in Payment Processing',
+  '215473685649410':'Add Budget Item to Space / Event',
+  '215473684421798':'Edit Event Registration Confirmation Message',
+  '215473643974089':'Ticket Limit — Single Ticket Purchase Only',
+  '215473683546202':'Add Column to Registrant List — Which Round',
+  '215473679048630':'Registration Bug — Error Message Shown',
+  '215473644861066':'Refund Failed — No Balance in Payment Account',
+  '215473612158101':'Refund Failed — No Balance in Payment Account',
+  '215473642258540':'Event Full Despite Available Spots',
+  '215473645611605':'Bug Uploading Images to Event',
+  '215473646553506':'Payment Tab Stuck / Cancel Registration',
+  '215473615195692':'Bug — Registrant List Not Loading / Locked',
+  '215473634751290':'Users Registering in Coing Instead of External Site',
+  '215473608846605':'Messages Pending Approval — Approval Delay',
+  '215473641353031':'Search Customer by Phone Number',
+  '215473641742731':'New Space Not Showing on Mobile / Connect Space',
+  '215473625497962':'Refund Failed — Bit Refund Issue',
+  '215473625408368':'Message Package — Emails Waiting to Send',
+  '215473629209579':'Clarify Event Rejection Note — Refer to DigITal',
+  '215473582994156':'Refund Failed — System Error',
+  '215473583494432':'Training Request for New User',
+  '215473612992812':'Request Phone Call with Agent / Phone Support',
+  '215473586531900':'Refund Failed — No Balance, Coordinate with Institutions',
+  '215473628225563':'Widespread Bug Across All Activities',
+  '215473584375757':'Refund Failed — Refund System Bug',
+  '215473612373054':'Multiple Failed Refunds — Customers Getting Failure Notice',
+  '215473595898709':'Refund Failed — No Balance in Payment Account',
+  '215473597764324':'Prevent Duplicate Registration for Multiple Activities',
+  '215473599037295':'Open Event Without Sharing in Digital — Small Object',
+  '215473609323638':'Full Refund for Registrants of Postponed Workshop',
+  '215473595179791':'Refund Failed via Bit — Community Center Customer',
+  '215473514113260':'Export Registrant List to Excel — File Not Downloading',
+  '215473608620899':'Registrants Not Recorded — No Confirmation Email Received',
+  '215473586571393':'Inquiry: Memorial Page in Salon at Northeast Space',
+  '215473512056064':'Zoom Link in Registration Template — Not Sent in Message',
+  '215473544245778':'Request for Human Agent / Account Access',
+  '215473594952572':'Send Message to Registrants with Zoom Link',
+  '215473584729295':'Refund Failed — Credit Card Refund Issue',
+  '215473583093074':'Share Space to Environment — Configure Sharing Settings',
+  '215473582690321':'Widespread Login Bug in Coing — Consumer & Admin',
+  '215473584791595':'Request Training Schedule / Coordinate Training',
+  '215473584914320':'Change Admin Permission — Transfer to East Center Space',
+  '215473583595010':'Refund Failed — Payment Error / Credit Card Investigation',
+  '215473545562384':'Cancel Event and Refund Registrants — Refund Issue',
+  '215473546283757':'Refund Registrants — System Not Allowing Refund',
+  '215473582868865':'Login Error — Fatal Error / Email & Password Not Recognized',
+  '215473582958343':'Widespread Bug — Username Not Recognized / Cannot Login',
+  '215473545005821':'Refund Failed — Customer Registered for Two Workshops',
+  '215473528242150':'Request for Human Agent (WhatsApp)',
+  '215473511866296':'Empty Participant List — Duplicated Event That Started',
+  '215473545602971':'Refund Failed — ERROR in System / Payment Investigation',
+  '215473543681721':'Change Event Date Created in Error',
+  '215473528350114':'February Revenue Not Reflected in Budget Items',
+  '215473513466566':'Duplicate Event to Another Space / Edit Permission',
+  '215473529896261':'Add Day of Week Display to Event Page',
+  // ── Event / Activity sub-topics (researched 2026-04) ──
+  '215473884583014':'Manual Registration of Participant to Activity',
+  '215473839549821':'Refund / Cannot Find Refund Screen for Trial Class',
+  '215473836525442':'Manage Admin Permissions',
+  '215473788734742':'Cannot Open Activity / Bug',
+  '215473781264897':'Event Registration Options / Partial Day Registration',
+  '215473780375024':'Admin Permissions - Cannot View Certain Events',
+  '215473700909158':'Banner / Image Upload Bug on Event Page',
+  '215473704116371':'Manage Admin Permissions',
+  '215473695115478':'Wrong Time in Confirmation Email for Activity',
+  '215473684555751':'Set Up Notification Template for Online Event',
+  '215473696803323':'Create Coupon',
+  '215473684020573':'Image Upload Issue on Event Page',
+  '215473625654188':'Admin Permission Request / Non-Municipal Email',
+  '215473625167908':'Cannot Save Event - Address Required Error',
+  '215473625120343':'Refund Error - Credit Card Company Issue',
+  '215473625511790':'Refund / Credit Processing Issue for Event',
+  '215473613362862':'Refund / Credit Processing Issue for Event',
+  '215473614017703':'How to Edit an Event / Activity',
+  '215473643953905':'Event / Activity Setup Assistance',
+  '215473646645689':'Manage Admin Permissions',
+  '215473641474880':'Bug: Event Showing as Full Incorrectly',
+  '215473548567114':'Pixel Tracking Access Request for Events',
+  '215473548207034':'Duplicate Activity - Zoom Link / WhatsApp Message Copy',
+  '215473534470762':'Manage Admin Permissions',
+  '215473513198168':'Registration Bug for Activity',
+  '215473592841868':'Grant Instructor Scan Permission for Class Attendance',
+  '215473592588024':'Mark Attendance for Adult Classes / Instructor Permissions',
+  '215473597813967':'Fraudulent Registration Confirmation Email',
+  '215473582962522':'Registration Link Not Working / Platform Outage',
+  // ── Newly categorized (from session research) ──
+  // Login / Access issues
+  '215473937204665':'Login / Verification Code Not Received',
+  '215473872096077':'Login / Google Sign-In Not Working',
+  '215473836250501':'Login / Cannot Access Backend',
+  '215473582924602':'Login / Cannot Access Backend',
+  '215473582860644':'Login / Reset Password - Username Not Recognized',
+  // Ticket / Coupon / Refund
+  '215473939780327':'Ticket Limit / Per Person Purchase Restriction',
+  '215473873264516':'Apply Coupon Code at Registration',
+  '215473883278661':'Cancel / Remove Accidental Ticket Type in Event',
+  '215473788759681':'Partial Refund / Admin Permission for Refund',
+  '215473836728619':'Find Registrant List for Past Event / Refund',
+  '215473642848301':'Generate Coupon Code / Bulk Coupon Request',
+  // WhatsApp
+  '215473873151712':'WhatsApp Template Request Failed / Data Token Variable',
+  '215473594509574':'WhatsApp Outgoing Message Logo / Branding Settings',
+  '215473600764810':'Create RSVP / Attendance Confirmation via WhatsApp',
+  // Space / Event visibility
+  '215473936874006':'Hide / Remove Past Events from Space Page',
+  '215473921667685':'Hide / Remove Past Events from Space Page',
+  '215473583376977':'Hide / Remove Past Events from Space Page',
+  '215473612568029':'Event Not Visible on Space Page / Public Settings',
+  '215473582967366':'Event Showing as Past / Closed Event Visibility',
+  // Member / Excel import
+  '215473780097360':'Excel Member Import / Upload Status Check',
+  '215473584061248':'Excel Member Import / Upload List',
+  // Registration / Form
+  '215473936802974':'Send Barcode Link / Edit Registration Confirmation Message',
+  '215473645010483':'Registration Form / Add File Upload Field',
+  '215473531314094':'Registration Confirmation Email Missing Zoom Link',
+  '215473533479345':'Edit Registration Form / Space Profile Settings',
+  // Event management
+  '215473610746575':'Cancel Event / Send Cancellation Message to Registrants',
+  '215473627461934':'Create Waitlist / Interest List for Event',
+  // Space / Admin settings
+  '215473901087657':'Check / Verify Space Admin Email',
+  '215473900582122':'Space Logo / Default Logo Settings',
+  '215473582940000':'Manage Admin Permissions',
+  '215473583346417':'Activate / Duplicate Membership Card',
+  // Media / Images
+  '215473645344897':'Upload Images to Library',
+  '215473645459283':'Upload Image to Event / Image Upload Error',
+  // Restore / Recovery
+  '215473883684079':'Restore / Recover Deleted Object',
+  // Message package
+  '215473625268073':'Message Package Status',
+  '215473601194416':'Message Package Status',
+  // Member details
+  '215473684714859':'Update Member Phone Number / Contact Details',
+  '215473684475454':'Share Member List / Registration Confirmation Email',
+  // Support / General
+  '215473780028314':'Contact Support / Get Support Email',
+  '215473694968158':'General Inquiry / No Specific Issue',
+  // Other specific topics
+  '215473610112934':'Scholarship Hours Reporting / Additional Registration Issue',
+  '215473531422633':'Create / Open New Project',
+};
+
+// ════ EVENT/ACTIVITY SUB-TOPICS (based on research) ════
+// Used to enrich "אירוע / פעילות" conversations with specific labels
+const EVENT_SUBTOPICS = {
+  '215473936199536':'Share Event Between Spaces',
+  '215473882899533':'Subscription / Membership Tab Not Showing',
+  '215473900258308':'Bug: Event Showing as Full Incorrectly',
+  '215473803664593':'Event Reminder Not Sending',
+};
+
+const BASE = "https://app.intercom.com/a/inbox/fjxquhz8/inbox/conversation/";
+const C = {pink:"#e91e8c",pinkL:"#ff9dd4",green:"#10b981",blue:"#3b82f6",amber:"#f59e0b",red:"#ef4444",grey:"#e5e7eb"};
+Chart.defaults.font.family = "'Inter',sans-serif";
+Chart.defaults.color = "#6b6b80";
+
+let ilPeriod = 'month';
+let ilResChart, ilTopicsChart, ilCityChart, ilSatChart;
+let usPeriod = 'all';
+let usResChart, usCityChart;
+
+let ilCustomFrom = 0, ilCustomTo = Infinity;
+
+function filterIL(period) {
+  const now = Date.now() / 1000;
+  const cutoffs = { week: now - 604800, month: now - 2592000, all: 0 };
+  if (period === 'custom') {
+    return IL_DATA.filter(c => c.ts >= ilCustomFrom && c.ts <= ilCustomTo);
+  }
+  return IL_DATA.filter(c => c.ts >= (cutoffs[period] ?? 0));
+}
+
+function aggregateIL(data) {
+  const total     = data.length;
+  const assumed   = data.filter(c => c.s === 'assumed_resolution').length;
+  const confirmed = data.filter(c => c.s === 'confirmed_resolution').length;
+  const resolved  = assumed + confirmed; // no-reply = resolved
+  const escalated = data.filter(c => c.s === 'escalated').length;
+  const negative  = data.filter(c => c.s === 'negative_feedback').length;
+  const noState   = data.filter(c => !c.s || c.s === '').length;
+  const ratings   = data.map(c => c.r).filter(r => r > 0);
+  const avgRat    = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(2) : null;
+  const topicMap  = {};
+  data.forEach(c => {
+    const t = FEATURE_HELP_MAP[c.id] || EVENT_SUBTOPICS[c.id] || c.t || 'Uncategorized';
+    topicMap[t] = (topicMap[t]||0)+1;
+  });
+  const topicsSorted = Object.entries(topicMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const cityMap = {};
+  data.forEach(c => { if(c.c && c.c !== 'Unknown') cityMap[c.c] = (cityMap[c.c]||0)+1; });
+  const citiesSorted = Object.entries(cityMap).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const ratDist = [0,0,0,0,0];
+  ratings.forEach(r => { if(r>=1&&r<=5) ratDist[r-1]++; });
+  const escalatedConvos = data.filter(c => c.s === 'escalated').slice(0, 40);
+  return { total, resolved, assumed, confirmed, escalated, negative, noState, avgRat,
+           ratings, topicsSorted, citiesSorted, ratDist, escalatedConvos };
+}
+
+const TOPIC_EN = {
+  // Original broad categories (from t field in IL_DATA)
+  'תשלום / כספים': 'Payments / Finance',
+  'הגדרות / הרשאות': 'Settings / Permissions',
+  'רישום / הרשמה': 'Registration',
+  'הודעות / התראות': 'Notifications / Alerts',
+  'קישור / שיתוף': 'Links / Sharing',
+  'דוחות / נרשמים': 'Reports / Registrants',
+  'תקלה / בעיה': 'Issues / Bugs',
+  'ביטול / החזר': 'Cancellations / Refunds',
+  'אירוע / פעילות': 'Event / Activity',
+  // Fallback
+  'Other': 'Uncategorized',
+  'לא מסווג': 'Uncategorized',
+};
+function topicEn(t) { return TOPIC_EN[t] || t; }
+
+const CITY_NAMES = {
+  'TLV'      : 'תל אביב',
+  'JLM'      : 'ירושלים',
+  'BY'       : 'באר יעקב',
+  'BS'       : 'בית שמש',
+  'BNS'      : 'בני שמעון',
+  'BNSIA'    : 'בני שמעון',
+  'GVT'      : 'גבעתיים',
+  'GE'       : 'גוש עציון',
+  'GT'       : 'גני תקווה',
+  'S.Sharon' : 'דרום השרון',
+  'Bat Yam'  : 'בת ים',
+  'Ashkelon' : 'אשקלון',
+  'Azor'     : 'אזור',
+  'Netanya'  : 'נתניה',
+  'Nasher'   : 'נשר',
+  'Misdar'   : 'המסדר',
+  'Vbachayim': 'ובחרת בחיים',
+  'Chosen'   : 'חוסן',
+  'Digitale' : 'דיגיטלי',
+  'ICE'      : 'ICE',
+};
+function cityName(c) { return CITY_NAMES[c] || c; }
+
+function renderIL(period) {
+  const data = filterIL(period);
+  const ag   = aggregateIL(data);
+  const pct  = n => ag.total > 0 ? Math.round(n/ag.total*100)+'%' : '0%';
+
+  document.getElementById('il-total').textContent        = ag.total;
+  document.getElementById('il-closed').textContent       = ag.resolved;
+  document.getElementById('il-closed-pct').textContent   = pct(ag.resolved) + ' Fin resolution rate';
+  document.getElementById('il-esc').textContent          = ag.escalated;
+  document.getElementById('il-esc-pct').textContent      = pct(ag.escalated) + ' escalation rate';
+  document.getElementById('il-sat').textContent          = ag.avgRat || 'N/A';
+  document.getElementById('il-sat-sub').textContent      = ag.ratings.length ? 'Based on ' + ag.ratings.length + ' ratings' : 'No ratings in period';
+  document.getElementById('il-sat-score').textContent    = ag.avgRat ? ag.avgRat + ' / 5.0' : 'N/A';
+  document.getElementById('il-sat-detail').textContent   = ag.ratings.length
+    ? ag.ratings.length + ' ratings — ' + Math.round(ag.ratDist[4]*100/ag.ratings.length) + '% gave 5 stars'
+    : 'No ratings collected in this period';
+
+  const ld = id => document.getElementById(id);
+  ld('il-leg-resolved').textContent   = ag.resolved;   ld('il-leg-resolved-pct').textContent  = pct(ag.resolved);
+  ld('il-leg-escalated').textContent  = ag.escalated;  ld('il-leg-escalated-pct').textContent = pct(ag.escalated);
+  ld('il-leg-negative').textContent   = ag.negative;   ld('il-leg-negative-pct').textContent  = pct(ag.negative);
+  ld('il-leg-none').textContent       = ag.noState;    ld('il-leg-none-pct').textContent      = pct(ag.noState);
+
+  ilResChart.data.datasets[0].data = [ag.resolved, ag.escalated, ag.negative, ag.noState];
+  ilResChart.update();
+
+  ilTopicsChart.data.labels           = ag.topicsSorted.map(([t]) => topicEn(t));
+  ilTopicsChart.data.datasets[0].data = ag.topicsSorted.map(([,n]) => n);
+  ilTopicsChart.update();
+
+  ilCityChart.data.labels           = ag.citiesSorted.map(([c]) => cityName(c));
+  ilCityChart.data.datasets[0].data = ag.citiesSorted.map(([,n]) => n);
+  ilCityChart.update();
+
+  ilSatChart.data.datasets[0].data = ag.ratDist;
+  ilSatChart.update();
+
+  const finList = document.getElementById('il-fin-list');
+  if (ag.escalatedConvos.length === 0) {
+    finList.innerHTML = '<div style="color:var(--sub);font-size:12px;padding:8px 0">No escalated conversations in this period 🎉</div>';
+  } else {
+    finList.innerHTML = ag.escalatedConvos.map(c => {
+      var specificTopic = FEATURE_HELP_MAP[c.id] || EVENT_SUBTOPICS[c.id] || c.t || 'Unknown Topic';
+      return [
+        '<div class="fin-item">',
+        '  <div class="fin-topic">' + specificTopic + '</div>',
+        '  <div class="fin-city">📍 ' + cityName(c.c || 'Unknown') + '</div>',
+        '  <div class="fin-link"><a href="' + BASE + c.id + '" target="_blank" rel="noopener">Open ↗</a></div>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+}
+
+function setILPeriod(period) {
+  ilPeriod = period;
+  ['week','month','all','custom'].forEach(p => {
+    document.getElementById('tp-'+p).classList.toggle('active', p === period);
+  });
+  const rangeWrap = document.getElementById('il-date-range');
+  if (period === 'custom') {
+    rangeWrap.classList.add('visible');
+  } else {
+    rangeWrap.classList.remove('visible');
+    renderIL(period);
+  }
+}
+
+function applyILCustomRange() {
+  const from = document.getElementById('il-date-from').value;
+  const to   = document.getElementById('il-date-to').value;
+  if (!from || !to) { alert('Please select both start and end dates.'); return; }
+  ilCustomFrom = new Date(from).getTime() / 1000;
+  ilCustomTo   = new Date(to).getTime() / 1000 + 86399;
+  renderIL('custom');
+}
+
+function initCharts() {
+  ilResChart = new Chart(document.getElementById('ilResChart'), {
+    type:'doughnut',
+    data:{labels:['Resolved by Fin','Escalated to Agent','Negative Feedback','No state'],
+          datasets:[{data:[0,0,0,0],backgroundColor:[C.green,C.amber,C.red,C.grey],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw}}}}
+  });
+
+  ilTopicsChart = new Chart(document.getElementById('ilTopicsChart'), {
+    type:'bar',
+    data:{labels:[],datasets:[{label:'',data:[],backgroundColor:['#e91e8c','#f05aa8','#f472b6','#ff9dd4','#fbbf24','#34d399','#60a5fa','#a78bfa','#fb7185','#94a3b8'],borderRadius:5,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+             scales:{x:{grid:{color:'#f0f0f5'},ticks:{font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+
+  ilCityChart = new Chart(document.getElementById('ilCityChart'), {
+    type:'bar',
+    data:{labels:[],datasets:[{label:'',data:[],backgroundColor:'#e91e8c',borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+             scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0f0f5'},ticks:{font:{size:10}}}}}
+  });
+
+  ilSatChart = new Chart(document.getElementById('ilSatChart'), {
+    type:'bar',
+    data:{labels:['1 star','2 stars','3 stars','4 stars','5 stars'],
+          datasets:[{label:'',data:[0,0,0,0,0],backgroundColor:[C.red,'#fb923c',C.amber,'#84cc16',C.green],borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+             scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'#f0f0f5'},ticks:{font:{size:10}}}}}
+  });
+
+  usResChart = new Chart(document.getElementById('usResChart'), {
+    type:'doughnut',
+    data:{labels:['Resolved by Fin','Escalated to Agent'],
+          datasets:[{data:[0,0],backgroundColor:[C.green,C.amber],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);return ' '+ctx.label+': '+ctx.raw+(t?' ('+Math.round(ctx.raw/t*100)+'%)':'');} }}}}
+  });
+
+  usCityChart = new Chart(document.getElementById('usCityChart'), {
+    type:'bar',
+    data:{labels:[],datasets:[{label:'',data:[],backgroundColor:[],borderRadius:6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+             scales:{x:{grid:{color:'#f0f0f5'},ticks:{stepSize:1,font:{size:10}}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
+  });
+}
+
+var usCustomFrom = 0, usCustomTo = Infinity;
+
+function filterUS(period) {
+  var now = Date.now() / 1000;
+  var cutoffs = { week: now - 604800, month: now - 2592000, all: 0 };
+  if (period === 'custom') {
+    return US_DATA.filter(function(c){ return c.ts >= usCustomFrom && c.ts <= usCustomTo; });
+  }
+  var cutoff = cutoffs[period] !== undefined ? cutoffs[period] : 0;
+  return US_DATA.filter(function(c){ return c.ts >= cutoff; });
+}
+
+function renderUS(period) {
+  var data = filterUS(period);
+  var total     = data.length;
+  var assumed   = data.filter(function(c){ return c.resolution==='assumed'; }).length;
+  var confirmed = data.filter(function(c){ return c.resolution==='confirmed'; }).length;
+  var escalated = data.filter(function(c){ return c.resolution==='escalated'; }).length;
+  var resolved  = assumed + confirmed; // no-reply treated as resolved
+  var pct = function(n){ return total>0 ? Math.round(n/total*100)+'%' : '0%'; };
+
+  document.getElementById('us-total').textContent    = total;
+  document.getElementById('us-total-sub').textContent = total===1 ? '1 verified US conversation' : total+' verified US conversations';
+  document.getElementById('us-closed').textContent   = resolved;
+  document.getElementById('us-closed-pct').textContent = pct(resolved)+' Fin resolution rate';
+  document.getElementById('us-esc').textContent      = escalated;
+  document.getElementById('us-esc-pct').textContent  = pct(escalated)+' escalation rate';
+  document.getElementById('us-confirmed').textContent = confirmed;
+  document.getElementById('us-confirmed-sub').textContent = 'User explicitly confirmed';
+
+  document.getElementById('us-leg-resolved').textContent     = resolved;
+  document.getElementById('us-leg-resolved-pct').textContent = pct(resolved);
+  document.getElementById('us-leg-escalated').textContent    = escalated;
+  document.getElementById('us-leg-escalated-pct').textContent = pct(escalated);
+
+  document.getElementById('us-tbl-ct').textContent = total+' conversation'+(total!==1?'s':'');
+
+  usResChart.data.datasets[0].data = [resolved, escalated];
+  usResChart.update();
+
+  var cityCounts = {};
+  data.forEach(function(c){ cityCounts[c.city] = (cityCounts[c.city]||0)+1; });
+  var cs = Object.entries(cityCounts).sort(function(a,b){ return b[1]-a[1]; });
+  var pal = cs.map(function(_,i){ return 'hsl('+(330-i*12)+','+(80-i*3)+'%,'+(52+i*4)+'%)'; });
+  usCityChart.data.labels = cs.map(function(e){ return e[0]; });
+  usCityChart.data.datasets[0].data = cs.map(function(e){ return e[1]; });
+  usCityChart.data.datasets[0].backgroundColor = pal;
+  usCityChart.update();
+
+  // Table
+  document.getElementById('usTableBody').innerHTML = data.map(function(c,i){
+    var escBadge = c.resolution==='escalated'
+      ? '<span style="display:inline-block;margin-left:6px;font-size:10px;background:var(--amber-bg);color:var(--amber);padding:1px 6px;border-radius:10px;font-weight:700">⚠ Escalated</span>'
+      : '';
+    return '<tr>' +
+      '<td style="color:var(--muted);font-size:11px;width:24px">'+(i+1)+'</td>' +
+      '<td><div style="font-weight:600;color:var(--text)">'+c.topic+escBadge+'</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:1px">"'+c.question+'"</div></td>' +
+      '<td style="color:var(--sub);white-space:nowrap;font-size:11px">📍 '+c.city+'</td>' +
+      '<td>'+usBadge(c.resolution)+'</td>' +
+      '<td class="td-link"><a href="'+BASE+c.id+'" target="_blank" rel="noopener">Open ↗</a></td>' +
+      '</tr>';
+  }).join('');
+
+  // Topics
+  if(data.length > 0) {
+    var tc = {};
+    data.forEach(function(c){ tc[c.topic] = (tc[c.topic]||0)+1; });
+    var ts2 = Object.entries(tc).sort(function(a,b){return b[1]-a[1];});
+    var max = ts2[0][1];
+    document.getElementById('usTopicsList').innerHTML = ts2.map(function(entry){
+      var t = entry[0], n = entry[1];
+      return '<div class="topic-row">' +
+        '<span class="topic-name">'+t+'</span>' +
+        '<div class="topic-bar-wrap"><div class="topic-bar-fill" style="width:'+(n/max*100)+'%"></div></div>' +
+        '<span class="topic-n">'+n+'</span>' +
+        '</div>';
+    }).join('');
+  } else {
+    document.getElementById('usTopicsList').innerHTML = '<div style="color:var(--sub);font-size:12px;padding:8px 0">No conversations in this period</div>';
+  }
+
+  // Escalated list
+  var escUS = data.filter(function(c){ return c.resolution === 'escalated'; });
+  document.getElementById('us-fin-list').innerHTML = escUS.length > 0
+    ? escUS.map(function(c){
+        return '<div class="fin-item">' +
+          '<div class="fin-topic">'+c.topic+'</div>' +
+          '<div class="fin-city">📍 '+c.city+'</div>' +
+          '<div class="fin-link"><a href="'+BASE+c.id+'" target="_blank" rel="noopener">Open ↗</a></div>' +
+          '</div>';
+      }).join('')
+    : '<div style="color:var(--sub);font-size:12px;padding:8px 0">No escalated conversations in this period 🎉</div>';
+}
+
+function setUSPeriod(period) {
+  usPeriod = period;
+  ['week','month','all','custom'].forEach(function(p){
+    document.getElementById('us-tp-'+p).classList.toggle('active', p === period);
+  });
+  var rangeWrap = document.getElementById('us-date-range');
+  if (period === 'custom') {
+    rangeWrap.classList.add('visible');
+  } else {
+    rangeWrap.classList.remove('visible');
+    renderUS(period);
+  }
+}
+
+function applyUSCustomRange() {
+  var from = document.getElementById('us-date-from').value;
+  var to   = document.getElementById('us-date-to').value;
+  if (!from || !to) { alert('Please select both start and end dates.'); return; }
+  usCustomFrom = new Date(from).getTime() / 1000;
+  usCustomTo   = new Date(to).getTime() / 1000 + 86399;
+  renderUS('custom');
+}
+
+function buildUS() {
+  renderUS(usPeriod);
+}
+
+function usBadge(r) {
+  if(r==='assumed')   return '<span class="badge b-assumed">✓ Resolved</span>';
+  if(r==='confirmed') return '<span class="badge b-confirmed">✔ Confirmed</span>';
+  if(r==='escalated') return '<span class="badge b-escalated">⚠ Escalated</span>';
+  return '<span class="badge b-assumed">'+r+'</span>';
+}
+
+function switchMarket(m) {
+  document.getElementById('sec-IL').classList.toggle('visible', m==='IL');
+  document.getElementById('sec-US').classList.toggle('visible', m==='US');
+  document.getElementById('btn-il').classList.toggle('active', m==='IL');
+  document.getElementById('btn-us').classList.toggle('active', m==='US');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCharts();
+  renderIL('month');
+  buildUS();
+  var now = new Date();
+  document.getElementById('last-updated').textContent = 'Last updated: ' +
+    now.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
+});
+
+</script>
+</body>
+</html>
